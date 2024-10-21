@@ -14,10 +14,12 @@ namespace Auctions.Controllers
     public class ListingsController : Controller
     {
         private readonly IListingsService _listingsService;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public ListingsController(IListingsService listingService)
+        public ListingsController(IListingsService listingService, IWebHostEnvironment webHostEnvironment)
         {
             _listingsService = listingService;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         // GET: Listings
@@ -27,24 +29,23 @@ namespace Auctions.Controllers
             return View(await applicationDbContext.ToListAsync());
         }
 
-        //// GET: Listings/Details/5
-        //public async Task<IActionResult> Details(int? id)
-        //{
-        //    if (id == null)
-        //    {
-        //        return NotFound();
-        //    }
+        // GET: Listings/Details/5
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
 
-        //    var listing = await _context.Listings
-        //        .Include(l => l.User)
-        //        .FirstOrDefaultAsync(m => m.Id == id);
-        //    if (listing == null)
-        //    {
-        //        return NotFound();
-        //    }
+            var listing = await _listingsService.GetById(id);
 
-        //    return View(listing);
-        //}
+            if (listing == null)
+            {
+                return NotFound();
+            }
+
+            return View(listing);
+        }
 
         // GET: Listings/Create
         public IActionResult Create()
@@ -58,15 +59,29 @@ namespace Auctions.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,Description,Price,ImagePath,IsSold,IdentityUserId")] Listing listing)
+        public async Task<IActionResult> Create(ListingVM listing)
         {
-            if (ModelState.IsValid)
+            if (listing.Image != null)
             {
-                _context.Add(listing);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                string uploadDir = Path.Combine(_webHostEnvironment.WebRootPath, "Images");
+                string fileName = listing.Image.FileName;
+                string filePath = Path.Combine(uploadDir, fileName);
+                using (var fileStream = new FileStream(filePath, FileMode.Create)) 
+                {
+                    listing.Image.CopyTo(fileStream);
+                }
+                var listObj = new Listing
+                {
+                    Title = listing.Title,
+                    Description = listing.Description,
+                    Price = listing.Price,
+                    IdentityUserId = listing.IdentityUserId,
+                    ImagePath = filePath
+                };
+
+                await _listingsService.Add(listObj);
+                return RedirectToAction("Index");
             }
-            ViewData["IdentityUserId"] = new SelectList(_context.Users, "Id", "Id", listing.IdentityUserId);
             return View(listing);
         }
 
