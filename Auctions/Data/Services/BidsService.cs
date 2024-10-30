@@ -1,4 +1,5 @@
 ﻿using Auctions.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Auctions.Data.Services
 {
@@ -14,6 +15,13 @@ namespace Auctions.Data.Services
         {
             _context.Bids.Add(bid);
             await _context.SaveChangesAsync();
+        }
+
+        public IQueryable<Bid> GetAll()
+        {
+            var applicationDbContext = from a in _context.Bids.Include(l => l.Listing).ThenInclude(l => l.User)
+                                       select a;
+            return applicationDbContext;
         }
     }
 }

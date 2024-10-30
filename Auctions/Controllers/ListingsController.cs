@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Auctions.Data;
 using Auctions.Models;
 using Auctions.Data.Services;
+using System.Security.Claims;
 
 namespace Auctions.Controllers
 {
@@ -43,21 +44,20 @@ namespace Auctions.Controllers
             return View(await PaginatedList<Listing>.CreateAsync(applicationDbContext.Where(l => l.IsSold == false).AsNoTracking(), pageNumber ?? 1, pageSize));
         }
 
-        //////
-        public async Task<IActionResult> MyListings(int? pageNumber, string searchString)
+        public async Task<IActionResult> MyListings(int? pageNumber)
         {
             var applicationDbContext = _listingsService.GetAll();
-            //return View(await applicationDbContext.ToListAsync());
-
             int pageSize = 3;
-            if (!string.IsNullOrEmpty(searchString))
-            {
-                applicationDbContext = applicationDbContext.Where(a => a.Title.Contains(searchString));
-                return View(await PaginatedList<Listing>.CreateAsync(applicationDbContext.Where(l => l.IsSold == false).AsNoTracking(), pageNumber ?? 1, pageSize));
-            }
 
+            return View("Index", await PaginatedList<Listing>.CreateAsync(applicationDbContext.Where(l => l.IdentityUserId == User.FindFirstValue(ClaimTypes.NameIdentifier)).AsNoTracking(), pageNumber ?? 1, pageSize));
+        }
 
-            return View(await PaginatedList<Listing>.CreateAsync(applicationDbContext.Where(l => l.IsSold == false).AsNoTracking(), pageNumber ?? 1, pageSize));
+        public async Task<IActionResult> MyBids(int? pageNumber)
+        {
+            var applicationDbContext = _bidsService.GetAll();
+            int pageSize = 3;
+
+            return View(await PaginatedList<Bid>.CreateAsync(applicationDbContext.Where(l => l.IdentityUserId == User.FindFirstValue(ClaimTypes.NameIdentifier)).AsNoTracking(), pageNumber ?? 1, pageSize));
         }
 
         // GET: Listings/Details/5
