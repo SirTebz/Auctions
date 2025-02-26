@@ -69,7 +69,3 @@ This project is licensed under the MIT License.
 ## Contact
 
 For questions or support, please open an issue in this repository.
-
----
-
-*Note: This README is based on the structure and typical conventions of ASP.NET MVC applications. Specific details may vary depending on the actual implementation within the repository.* 
